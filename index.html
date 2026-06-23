@@ -256,6 +256,9 @@ body.variant-a2 .linkbtn:hover{background:linear-gradient(135deg,#82d4f4,#f4abc0
   body.variant-a2 .card.side-left:before,body.variant-a2 .card.side-right:before{left:-28px;transform:translateX(-50%)}
 }
 
+
+.video-fallback{position:relative;border-radius:18px;background:#e5d0b1;border:8px solid #fff;box-shadow:0 12px 28px rgba(70,45,21,.16);overflow:hidden;min-height:320px;display:grid;place-items:center}.video-fallback img{width:100%;height:100%;max-height:440px;object-fit:cover;border:0!important;box-shadow:none!important;border-radius:10px!important;filter:saturate(.96) contrast(1.02)}.video-fallback:after{content:"▶";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:rgba(255,253,248,.82);color:#283347;font-size:30px;box-shadow:0 14px 34px rgba(40,48,62,.18);backdrop-filter:blur(10px)}.play-note{position:absolute;left:18px;bottom:16px;z-index:2;border-radius:999px;padding:8px 12px;background:rgba(40,49,69,.78);color:#fff;font-family:var(--sans);font-size:12px;letter-spacing:.04em}
+
 </style>
 </head>
 <body class="variant-a2"><div class="grain"></div><div class="page">
@@ -318,7 +321,17 @@ function openModal(e){
   document.getElementById('modalTitle').textContent=e.title;
   document.getElementById('modalMeta').innerHTML=[...e.tags,e.sourceLabel,e.precision==='month'?'月份待细化':''].filter(Boolean).map(t=>`<span class="pill">${escapeHtml(t)}</span>`).join('');
   const gallery=document.getElementById('modalGallery');
-  if((e.media||[]).length){ gallery.innerHTML=e.media.map((m,i)=>m.type==='video' && (m.display_url||m.url) ? `<video class="${i===0?'wide':''}" controls poster="${escapeHtml(m.thumb||'')}" src="${escapeHtml(m.display_url||m.url)}"></video>` : `<img class="${i===0?'wide':''}" src="${escapeHtml(m.display_url||m.display_thumb||m.url||m.thumb)}" alt="${escapeHtml(e.title)}">`).join(''); }
+  if((e.media||[]).length){ gallery.innerHTML=e.media.map((m,i)=>{
+    const localVideo = m.display_url || m.local_url || '';
+    const poster = m.display_thumb || m.local_thumb || m.thumb || m.display_url || m.url || '';
+    if(m.type==='video' && localVideo && !/^https?:\/\//.test(localVideo)){
+      return `<video class="${i===0?'wide':''}" controls poster="${escapeHtml(poster)}" src="${escapeHtml(localVideo)}"></video>`;
+    }
+    if(m.type==='video'){
+      return `<div class="video-fallback ${i===0?'wide':''}"><img src="${escapeHtml(poster)}" alt="${escapeHtml(e.title)}"><div class="play-note">视频需打开原始来源观看</div></div>`;
+    }
+    return `<img class="${i===0?'wide':''}" src="${escapeHtml(m.display_url||m.display_thumb||m.url||m.thumb)}" alt="${escapeHtml(e.title)}">`;
+  }).join(''); }
   else { gallery.innerHTML=`<div class="placeholder wide" style="min-height:320px;border-radius:20px">这里还没有可嵌入媒体。可以后续补本地图片/视频，或直接打开来源。</div>`; }
   const source=e.long_url?`<p><a class="linkbtn" href="${escapeHtml(e.long_url)}" target="_blank" rel="noreferrer">打开原始来源</a></p>`:'';
   document.getElementById('modalDetail').innerHTML=`<p><strong>日期：</strong>${escapeHtml(e.date)}${e.precision==='month'?'（原文只给到月份）':''}</p><p><strong>展品名：</strong>${escapeHtml(e.title)}</p><p><strong>来源类型：</strong>${escapeHtml(e.sourceLabel)}</p>${e.source_user?`<p><strong>来源账号：</strong>${escapeHtml(e.source_user)}</p>`:''}${e.source_text?`<p><strong>来源摘录：</strong>${escapeHtml(e.source_text)}</p>`:''}${source}`;
